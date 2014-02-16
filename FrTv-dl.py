@@ -15,6 +15,7 @@ class FRTvurl():
 	url='http://www.francetvinfo.fr/appftv/webservices/video/getInfosOeuvre.php?id-diffusion='
 	video_url=''
 	idv=0
+	titre=''
 	def __init__(self,id_video):
 		self.id_video=id_video
 	def get_url(self):
@@ -23,8 +24,8 @@ class FRTvurl():
 		data=urllib.urlopen("%s%s"%(self.url,self.id_video)).read()
 		root=etree.XML(data)
 		url=root.xpath('//url/text()')[0]
-		titre=root.xpath('//titre/text()')[0]
-		print titre
+		self.titre=root.xpath('//titre/text()')[0]
+		print self.titre
 		url=url.replace('/z/','/i/')
 		url=url.replace('manifest.f4m', 'index_2_av.m3u8')
 		self.video_url=url
@@ -69,6 +70,8 @@ class FRTvurl():
 		for n,name in enumerate(tb):
 			p.display(n)
 			os.unlink(name)
+	def gettitre(self):
+		return self.titre
 			
 
 vid=FRTvurl(sys.argv[1])
@@ -77,7 +80,7 @@ vid.getbloc()
 thread.start_new_thread(vid.concatfile,());
 print "\nConvert"
 time.sleep(10)
-args=['ffmpeg','-y','-i','dd.fifo','-vcodec','copy',str(sys.argv[1])+'.mp4']
+args=['ffmpeg','-y','-i','dd.fifo','-vcodec','copy',str(sys.argv[1])+'-'+vid.gettitre()+'.mp4']
 p=subprocess.call(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
 print "\nClean"
