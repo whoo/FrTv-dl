@@ -5,6 +5,10 @@ import urllib
 import sys
 import os
 import progress
+import glob
+import thread
+import time
+import subprocess
 
 class FRTvurl():
 	id_video=0
@@ -47,6 +51,34 @@ class FRTvurl():
 		os.mkdir(str(self.id_video))
 		os.chdir(str(self.id_video))
 			
+	def concatfile(self):
+	        if (os.path.exists('dd.fifo')):
+	                os.unlink('dd.fifo')
+	        os.mkfifo('dd.fifo')
+	
+	        tb=glob.glob('*.ts')
+	        tb.sort()
+	        p=progress.progressbar(len(tb))
+	        for n,name in enumerate(tb):
+	                p.display(n)
+	                open('dd.fifo','wb').write(open(name,'rb').read())
+	def clean(self):
+		tb=glob.glob('*.ts')
+		p=progress.progressbar(len(tb))
+		os.unlink('dd.fifo')
+		for n,name in enumerate(tb):
+			p.display(n)
+			os.unlink(name)
+			
 
 vid=FRTvurl(sys.argv[1])
 vid.getbloc()
+
+thread.start_new_thread(vid.concatfile,());
+print "\nConvert"
+time.sleep(10)
+args=['ffmpeg','-y','-i','dd.fifo','-vcodec','copy',str(sys.argv[1])+'.mp4']
+p=subprocess.call(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+print "\nClean"
+vid.clean()
